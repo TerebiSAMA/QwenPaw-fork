@@ -3,11 +3,13 @@
 """Tests for DoomLoopGate reset behaviour."""
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
 
+from qwenpaw.loop.catalog import get_gate_catalog
 from qwenpaw.loop.gates.base import StopAction
 from qwenpaw.loop.gates.doom_loop import DoomLoopGate
 
@@ -18,6 +20,31 @@ def _stage(after, action="stop", prompt="stop"):
         action=action,
         prompt=prompt,
     )
+
+
+def test_catalog_create_supports_dict_stages():
+    """Catalog model_dump() passes dict stages to the gate."""
+    gate = get_gate_catalog().create("doom_loop", {})
+    assert isinstance(gate, DoomLoopGate)
+    assert len(gate._stages) == 2
+
+
+def test_dict_stage_stop_behavior():
+    """A dict stage can trigger the stop action."""
+    gate = DoomLoopGate(
+        window_size=3,
+        similarity_threshold=1.0,
+        stages=[{"after": 3, "action": "stop", "prompt": "doom stop"}],
+    )
+    gate.activate(None)
+    gate._ensure_state()
+    for _ in range(3):
+        gate.record("tool_a", "hash1")
+
+    result = asyncio.run(gate.check({"iteration": 0}))
+
+    assert result.action == StopAction.TERMINATE
+    assert result.reason == "doom stop"
 
 
 @pytest.fixture(autouse=True)

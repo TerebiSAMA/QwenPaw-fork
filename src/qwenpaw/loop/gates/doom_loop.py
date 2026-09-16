@@ -22,6 +22,13 @@ from .loop_gate import LoopGate
 logger = logging.getLogger(__name__)
 
 
+def _stage_field(stage: Any, field_name: str) -> Any:
+    """Read a stage field from either a dict or an object."""
+    if isinstance(stage, dict):
+        return stage.get(field_name)
+    return getattr(stage, field_name)
+
+
 @dataclass
 class _ToolCallRecord:
     """One recorded tool call for pattern analysis."""
@@ -71,7 +78,7 @@ class DoomLoopGate(LoopGate):
         self._threshold = similarity_threshold
         self._stages = sorted(
             stages or [],
-            key=lambda s: s.after,
+            key=lambda stage: _stage_field(stage, "after"),
         )
 
     def _ensure_state(self) -> _DoomState:
@@ -138,24 +145,25 @@ class DoomLoopGate(LoopGate):
 
         active_stage = None
         for stage in reversed(self._stages):
-            if state.consecutive_hits >= stage.after:
+            if state.consecutive_hits >= _stage_field(stage, "after"):
                 active_stage = stage
                 break
 
         if active_stage is None:
             return _bypass
 
-        if active_stage.action == "stop":
+        if _stage_field(active_stage, "action") == "stop":
+            reason = _stage_field(active_stage, "prompt") or ""
             logger.info(
                 "DoomLoopGate: STOP after %d hits",
                 state.consecutive_hits,
             )
             return StopHandlerResult(
                 action=StopAction.TERMINATE,
-                reason=active_stage.prompt,
+                reason=reason,
             )
 
-        state.prompt = active_stage.prompt
+        state.prompt = _stage_field(active_stage, "prompt") or ""
         logger.warning(
             "DoomLoopGate: warning at %d hits",
             state.consecutive_hits,
