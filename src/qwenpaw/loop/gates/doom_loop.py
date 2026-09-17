@@ -13,6 +13,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
+from ...config.config import DoomLoopStageConfig
 from .base import (
     StopAction,
     StopHandlerResult,
@@ -20,13 +21,6 @@ from .base import (
 from .loop_gate import LoopGate
 
 logger = logging.getLogger(__name__)
-
-
-def _stage_field(stage: Any, field_name: str) -> Any:
-    """Read a stage field from either a dict or an object."""
-    if isinstance(stage, dict):
-        return stage.get(field_name)
-    return getattr(stage, field_name)
 
 
 @dataclass
@@ -71,14 +65,14 @@ class DoomLoopGate(LoopGate):
         *,
         window_size: int = 3,
         similarity_threshold: float = 1.0,
-        stages: list | None = None,
+        stages: list[DoomLoopStageConfig] | None = None,
     ) -> None:
         super().__init__()
         self._window_size = max(2, window_size)
         self._threshold = similarity_threshold
         self._stages = sorted(
             stages or [],
-            key=lambda stage: _stage_field(stage, "after"),
+            key=lambda s: s.after,
         )
 
     def _ensure_state(self) -> _DoomState:
@@ -145,25 +139,24 @@ class DoomLoopGate(LoopGate):
 
         active_stage = None
         for stage in reversed(self._stages):
-            if state.consecutive_hits >= _stage_field(stage, "after"):
+            if state.consecutive_hits >= stage.after:
                 active_stage = stage
                 break
 
         if active_stage is None:
             return _bypass
 
-        if _stage_field(active_stage, "action") == "stop":
-            reason = _stage_field(active_stage, "prompt") or ""
+        if active_stage.action == "stop":
             logger.info(
                 "DoomLoopGate: STOP after %d hits",
                 state.consecutive_hits,
             )
             return StopHandlerResult(
                 action=StopAction.TERMINATE,
-                reason=reason,
+                reason=active_stage.prompt,
             )
 
-        state.prompt = _stage_field(active_stage, "prompt") or ""
+        state.prompt = active_stage.prompt
         logger.warning(
             "DoomLoopGate: warning at %d hits",
             state.consecutive_hits,
