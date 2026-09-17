@@ -2,9 +2,7 @@
 """Abstract base class for memory managers."""
 
 import asyncio
-import json
 import logging
-import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -15,9 +13,8 @@ from threading import RLock
 from typing import Any
 from weakref import WeakValueDictionary
 
-from agentscope.message import AssistantMsg, Msg, TextBlock, ThinkingBlock
-from agentscope.message import ToolCallBlock, ToolCallState
-from agentscope.message import ToolResultBlock, ToolResultState
+from agentscope.message import AssistantMsg, Msg, TextBlock
+from agentscope.message import ToolResultState
 from agentscope.message import Usage
 from agentscope.middleware import MiddlewareBase
 from agentscope.tool import ToolChunk
