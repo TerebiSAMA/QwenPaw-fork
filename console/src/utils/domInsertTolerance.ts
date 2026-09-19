@@ -29,23 +29,36 @@
 
 const GUARD_FLAG = "__qwenpawDomInsertToleranceInstalled";
 
+/**
+ * Vite injects `import.meta.env`; other bundlers and plain Node do not, so
+ * probe it rather than reading it unconditionally.
+ */
+function isDevBuild(): boolean {
+  try {
+    return Boolean(import.meta.env?.DEV);
+  } catch {
+    return false;
+  }
+}
+
 interface GuardWindow extends Window {
   [GUARD_FLAG]?: boolean;
 }
 
-let installed = false;
-
-/** Installs the guard once per page. No-op outside the browser. */
+/**
+ * Installs the guard once per page. Safe to call repeatedly and outside the
+ * browser (SSR, or tests without a DOM).
+ *
+ * The "already installed" flag lives on `window` rather than in a module-level
+ * variable: if the module ends up duplicated in a bundle, or is reloaded by
+ * HMR, a module-local flag would be reset and the wrapper would stack on top
+ * of itself, delegating through the same call twice.
+ */
 export function installDomInsertTolerance(): void {
-  if (installed) return;
   if (typeof window === "undefined" || typeof Node === "undefined") return;
   const win = window as GuardWindow;
-  if (win[GUARD_FLAG]) {
-    installed = true;
-    return;
-  }
+  if (win[GUARD_FLAG]) return;
   win[GUARD_FLAG] = true;
-  installed = true;
 
   const originalInsertBefore = Node.prototype.insertBefore;
 
@@ -70,7 +83,7 @@ export function installDomInsertTolerance(): void {
       return originalInsertBefore.call(this, newNode, null) as T;
     }
 
-    if (import.meta.env?.DEV) {
+    if (isDevBuild()) {
       console.warn(
         "[dom-tolerance] insertBefore reference node is not a child of the " +
           "parent; insertion skipped",
@@ -89,7 +102,7 @@ export function installDomInsertTolerance(): void {
     // Same class of race: the node was moved out from under us first.
     // Report success so React can continue instead of failing the commit.
     if (child.parentNode !== this) {
-      if (import.meta.env?.DEV) {
+      if (isDevBuild()) {
         console.warn(
           "[dom-tolerance] removeChild child does not belong to this parent; " +
             "removal skipped",
