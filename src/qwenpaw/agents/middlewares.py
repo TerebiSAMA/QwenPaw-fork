@@ -19,7 +19,7 @@ import logging
 from copy import deepcopy
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Iterator, Set
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Iterator, Mapping, Set
 
 from agentscope.middleware import MiddlewareBase
 from agentscope.message import Msg
@@ -53,7 +53,9 @@ def _is_auto_memory_recall_msg(msg: Any) -> bool:
     (handled by ``AUTO_MEMORY_SEARCH_BLOCK_HIDDEN_KEY`` metadata flag and
     the frontend short-circuit).
     """
-    meta = getattr(msg, "metadata", None) or {}
+    meta = getattr(msg, "metadata", None)
+    if not isinstance(meta, Mapping):
+        return False
     return bool(meta.get(AUTO_MEMORY_SEARCH_BLOCK_HIDDEN_KEY))
 
 

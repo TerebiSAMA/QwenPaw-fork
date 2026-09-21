@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, List, Union
+from typing import Any, List, Mapping, Union
 
 from qwenpaw.schemas import (
     AudioContent,
@@ -45,7 +45,9 @@ def _is_auto_memory_recall_message(message: Any) -> bool:
     channels (Feishu / console / etc.). This helper lets any rendering
     branch short-circuit before leaking the recall payload to users.
     """
-    meta = getattr(message, "metadata", None) or {}
+    meta = getattr(message, "metadata", None)
+    if not isinstance(meta, Mapping):
+        return False
     return bool(meta.get(AUTO_MEMORY_SEARCH_BLOCK_HIDDEN_KEY))
 
 
