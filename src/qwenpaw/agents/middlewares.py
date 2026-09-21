@@ -308,7 +308,8 @@ class MemoryMiddleware(MiddlewareBase):
                         )
             except Exception:
                 logger.exception(
-                    "MemoryMiddleware post-compression auto-memory flush " "failed",
+                    "MemoryMiddleware post-compression auto-memory flush "
+                    "failed",
                 )
 
     async def _flush_auto_memory(
@@ -438,7 +439,9 @@ class MemoryMiddleware(MiddlewareBase):
             if not messages:
                 continue
             try:
-                snapshots[marker] = [msg.model_dump(mode="json") for msg in messages]
+                snapshots[marker] = [
+                    msg.model_dump(mode="json") for msg in messages
+                ]
             except Exception:
                 logger.exception(
                     "MemoryMiddleware could not save turn snapshot: %s",
@@ -504,7 +507,10 @@ class MemoryMiddleware(MiddlewareBase):
         turn_marker: str,
     ) -> list["Msg"]:
         search = turn_state.get("search")
-        if not isinstance(search, dict) or search.get("turn_marker") != turn_marker:
+        if (
+            not isinstance(search, dict)
+            or search.get("turn_marker") != turn_marker
+        ):
             return []
         raw_messages = search.get("messages")
         if not isinstance(raw_messages, list):
@@ -859,7 +865,9 @@ class ToolResultPruningMiddleware(MiddlewareBase):
             if not isinstance(msg.content, list):
                 continue
             is_recent = idx >= split_index
-            max_bytes = self._recent_max_bytes if is_recent else self._old_max_bytes
+            max_bytes = (
+                self._recent_max_bytes if is_recent else self._old_max_bytes
+            )
 
             for block in msg.content:
                 if self._block_type(block) != "tool_result":
@@ -879,7 +887,9 @@ class ToolResultPruningMiddleware(MiddlewareBase):
                     continue
 
                 effective_max = (
-                    self._recent_max_bytes if tool_id in exempt_tool_ids else max_bytes
+                    self._recent_max_bytes
+                    if tool_id in exempt_tool_ids
+                    else max_bytes
                 )
                 block_metadata = (
                     block.setdefault("metadata", {})
