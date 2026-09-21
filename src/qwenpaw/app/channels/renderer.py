@@ -192,10 +192,7 @@ class MessageRenderer:
         content = getattr(message, "content", None) or []
         s = self.style
 
-        if (
-            not s.display_config.show_thinking
-            and msg_type == MessageType.REASONING
-        ):
+        if not s.display_config.show_thinking and msg_type == MessageType.REASONING:
             return []
 
         logger.debug(
@@ -236,11 +233,7 @@ class MessageRenderer:
                 btype = b.get("type")
                 if btype == "data":
                     src = b.get("source") or {}
-                    mt = (
-                        src.get("media_type", "")
-                        if isinstance(src, dict)
-                        else ""
-                    )
+                    mt = src.get("media_type", "") if isinstance(src, dict) else ""
                     for prefix in ("image", "audio", "video"):
                         if mt.startswith(f"{prefix}/"):
                             btype = prefix
@@ -257,9 +250,7 @@ class MessageRenderer:
                     if stype == "url" and src.get("url"):
                         url = src["url"]
                     elif stype == "base64" and src.get("data"):
-                        mt = (
-                            src.get("media_type") or "application/octet-stream"
-                        )
+                        mt = src.get("media_type") or "application/octet-stream"
                         url = f"data:{mt};base64,{src['data']}"
                     if url:
                         if btype == "image":
@@ -277,8 +268,7 @@ class MessageRenderer:
                             result.append(
                                 FileContent(
                                     file_url=url,
-                                    filename=b.get("filename")
-                                    or b.get("name"),
+                                    filename=b.get("filename") or b.get("name"),
                                 ),
                             )
                 if btype == "thinking" and b.get("thinking"):
@@ -345,9 +335,7 @@ class MessageRenderer:
                                 and getattr(p, "text", "")
                             )
                             if text:
-                                result_limit = (
-                                    s.display_config.tool_result_max_length
-                                )
+                                result_limit = s.display_config.tool_result_max_length
                                 out.append(
                                     TextContent(
                                         text=_truncate_tool_text(
@@ -451,9 +439,7 @@ class MessageRenderer:
                     name = data.get("name")
                     output = data.get("output")
                     args = data.get("arguments")
-                    if name is not None and (
-                        output is not None or args is not None
-                    ):
+                    if name is not None and (output is not None or args is not None):
                         is_call = args is not None and output is None
                         allowed = (
                             s.display_config.show_tool_calls
