@@ -19,7 +19,15 @@ import logging
 from copy import deepcopy
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Iterator, Mapping, Set
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Iterator,
+    Mapping,
+    Set,
+)
 
 from agentscope.middleware import MiddlewareBase
 from agentscope.message import Msg
